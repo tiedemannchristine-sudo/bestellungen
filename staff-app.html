@@ -267,7 +267,7 @@ const STORAGE_KEY_URL = 'lenoko_sb_url';
 const STORAGE_KEY_KEY = 'lenoko_sb_key';
 const SUMUP_MERCHANT   = ''; // optional: deine SumUp-Merchant-E-Mail
 
-let supabase, channel;
+let sbClient, channel;
 let orders = [];
 let currentFilter = 'offen';
 let soundEnabled = localStorage.getItem('lenoko_sound') !== 'false';
@@ -315,10 +315,10 @@ function saveSetup() {
 }
 
 async function initApp(url, key) {
-  supabase = window.supabase.createClient(url, key);
+  sbClient = window.supabase.createClient(url, key);
 
   // Test connection
-  const { error } = await supabase.from('orders').select('id').limit(1);
+  const { error } = await sbClient.from('orders').select('id').limit(1);
   if (error && error.code !== 'PGRST116') {
     showSetupError('Verbindung fehlgeschlagen: ' + error.message);
     return;
@@ -342,7 +342,7 @@ function showSetupError(msg) {
 
 // ── DATA ─────────────────────────────────────────────────────────────
 async function loadOrders() {
-  const { data, error } = await supabase
+  const { data, error } = await sbClient
     .from('orders')
     .select('*')
     .order('created_at', { ascending: false });
@@ -352,7 +352,7 @@ async function loadOrders() {
 }
 
 function subscribeRealtime() {
-  channel = supabase.channel('orders-channel')
+  channel = sbClient.channel('orders-channel')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
       handleRealtimeEvent(payload);
     })
@@ -385,7 +385,7 @@ function handleRealtimeEvent(payload) {
 }
 
 async function updateOrderStatus(id, status) {
-  const { error } = await supabase.from('orders').update({ status }).eq('id', id);
+  const { error } = await sbClient.from('orders').update({ status }).eq('id', id);
   if (error) { toast('Fehler beim Speichern'); console.error(error); }
 }
 
