@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a0a00">
+<title>LeNoKo – Bestellen</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --dunkel:  #1a0a00;
+    --braun:   #562600;
+    --mittel:  #937551;
+    --gold:    #cfab71;
+    --cream:   #fff7e8;
+    --surface: #2a1500;
+    --surface2:#3a1f08;
+    --border:  rgba(207,171,113,0.2);
+    --green:   #5aad72;
+    --red:     #e05a3a;
+    --radius:  14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--dunkel);
+    color: var(--cream);
+    min-height: 100dvh;
+    padding-bottom: 140px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(160deg, var(--braun) 0%, var(--dunkel) 60%);
+    padding: 2rem 1.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-logo { font-size: 1.8rem; margin-bottom: 0.25rem; }
+  .hero-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--gold); line-height: 1.2; }
+  .hero-sub   { font-size: 0.82rem; color: var(--mittel); margin-top: 0.3rem; }
+  .hero-tisch {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    margin-top: 0.75rem; background: rgba(207,171,113,0.15);
+    border: 1px solid var(--gold); border-radius: 99px;
+    padding: 0.3rem 0.9rem; font-size: 0.8rem; color: var(--gold); font-weight: 500;
+  }
+
+  /* ── CATEGORY ── */
+  .category { margin-top: 1.25rem; }
+  .category-title {
+    padding: 0.5rem 1.25rem; font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.1em; color: var(--mittel); text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── MENU ITEM ── */
+  .menu-item {
+    display: flex; align-items: center;
+    padding: 0.9rem 1.25rem; gap: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--dunkel);
+    transition: background .1s;
+  }
+  .menu-item:active { background: var(--surface); }
+  .item-info { flex: 1; }
+  .item-name-row { font-weight: 500; font-size: 0.95rem; display: flex; align-items: baseline; gap: 0.5rem; }
+  .item-tag {
+    font-size: 0.62rem; padding: 2px 6px; border-radius: 99px;
+    background: rgba(207,171,113,0.15); color: var(--gold); font-weight: 600;
+  }
+  .item-desc { font-size: 0.78rem; color: var(--mittel); margin-top: 2px; line-height: 1.4; }
+  .item-price { color: var(--gold); font-family: 'Playfair Display', serif; font-size: 1rem; margin-top: 3px; }
+
+  /* ── COUNTER ── */
+  .counter { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+  .cnt-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--surface); border: 1.5px solid var(--border);
+    color: var(--cream); font-size: 1.1rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-weight: 300; transition: all .1s;
+    flex-shrink: 0;
+  }
+  .cnt-btn:active { transform: scale(0.9); background: var(--gold); color: var(--dunkel); border-color: var(--gold); }
+  .cnt-val { min-width: 20px; text-align: center; font-weight: 600; font-size: 1rem; }
+  .cnt-val.nonzero { color: var(--gold); }
+
+  /* ── NOTE ── */
+  .note-section { padding: 1rem 1.25rem; }
+  .note-label { font-size: 0.78rem; color: var(--mittel); margin-bottom: 0.4rem; }
+  textarea {
+    width: 100%; background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); color: var(--cream); font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; padding: 0.75rem; resize: none; outline: none;
+    min-height: 70px;
+  }
+  textarea:focus { border-color: var(--gold); }
+  textarea::placeholder { color: var(--mittel); }
+
+  /* ── STICKY FOOTER ── */
+  .sticky-footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface2); border-top: 1px solid var(--border);
+    padding: 0.9rem 1.25rem;
+    backdrop-filter: blur(10px);
+  }
+  .footer-summary {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  .footer-count { font-size: 0.8rem; color: var(--mittel); }
+  .footer-total { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--gold); }
+  .btn-order {
+    width: 100%; padding: 1rem; background: var(--gold); color: var(--dunkel);
+    border: none; border-radius: var(--radius); font-size: 1rem; font-weight: 600;
+    font-family: 'DM Sans', sans-serif; cursor: pointer;
+    transition: opacity .15s; letter-spacing: 0.01em;
+  }
+  .btn-order:active { opacity: 0.8; }
+  .btn-order:disabled { opacity: 0.35; cursor: default; }
+
+  /* ── SUCCESS ── */
+  #success-screen {
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 80dvh; padding: 2rem; text-align: center; gap: 1.25rem;
+  }
+  .success-icon { font-size: 4rem; animation: pop .4s ease; }
+  @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+  .success-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--gold); }
+  .success-sub { color: var(--mittel); font-size: 0.9rem; max-width: 280px; line-height: 1.5; }
+  .btn-back {
+    padding: 0.8rem 2rem; border: 1.5px solid var(--border);
+    border-radius: var(--radius); background: transparent; color: var(--mittel);
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; margin-top: 0.5rem;
+  }
+
+  /* ── CONFIG BANNER ── */
+  #config-banner {
+    background: rgba(224,90,58,0.15); border: 1px solid var(--red);
+    padding: 1rem 1.25rem; margin: 1rem; border-radius: var(--radius);
+    font-size: 0.82rem; color: var(--red); line-height: 1.5; display: none;
+  }
+  #config-banner code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
+
+  .loading { padding: 3rem; text-align: center; color: var(--mittel); }
+</style>
+</head>
+<body>
+
+<div id="main-content">
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-logo">☕</div>
+    <div class="hero-title">LeNoKo<br><span style="font-style:italic;font-weight:400;font-size:1.1rem">Linz am Rhein</span></div>
+    <div class="hero-sub">Frisch geröstet – direkt zu dir</div>
+    <div class="hero-tisch" id="tisch-badge">📍 Tisch …</div>
+  </div>
+
+  <div id="config-banner"></div>
+  <div id="menu-container"><div class="loading">Lade Karte…</div></div>
+
+  <div class="note-section">
+    <div class="note-label">Anmerkung (optional)</div>
+    <textarea id="note" placeholder="z.B. ohne Zucker, Allergie…" rows="2"></textarea>
+  </div>
+</div>
+
+<div id="success-screen">
+  <div class="success-icon">✓</div>
+  <div class="success-title">Bestellung aufgegeben!</div>
+  <div class="success-sub" id="success-msg">Wir bereiten alles frisch für dich vor.</div>
+  <button class="btn-back" onclick="resetOrder()">Weitere Bestellung</button>
+</div>
+
+<div class="sticky-footer" id="footer">
+  <div class="footer-summary">
+    <div class="footer-count" id="footer-count">0 Artikel</div>
+    <div class="footer-total" id="footer-total">0,00 €</div>
+  </div>
+  <button class="btn-order" id="order-btn" disabled onclick="submitOrder()">Jetzt bestellen</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  KONFIGURATION – hier anpassen
+// ═══════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://hlcicceznuizhbzpwmhm.supabase.co';   // ← ersetzen
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsY2ljY2V6bnVpemhienB3bWhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4ODc5MzksImV4cCI6MjA5NDQ2MzkzOX0.pY2iuaGFOYogJ3to5xtnlIg0F6yLx7uS-_6X-ca2slA';         // ← ersetzen
+
+// Speisekarte – hier Produkte und Preise pflegen
+const MENU = [
+  {
+    category: 'Kaffee',
+    items: [
+      { id: 'esp',    name: 'Espresso',          price: 2.20, desc: 'Kräftig & aromatisch, Linzer Röstung' },
+      { id: 'dbl',    name: 'Doppio',             price: 3.20, desc: 'Doppelter Espresso' },
+      { id: 'cap',    name: 'Cappuccino',         price: 3.50, desc: 'Espresso mit aufgeschäumter Milch' },
+      { id: 'latte',  name: 'Latte Macchiato',    price: 3.80, desc: 'Milchkaffee in Schichten' },
+      { id: 'filt',   name: 'Filterkaffee',       price: 2.80, desc: 'Handgefiltert, täglich frisch' },
+      { id: 'cold',   name: 'Cold Brew',          price: 3.80, desc: 'Kalt aufgebrüht, 12 Stunden', tag: 'Sommer' },
+    ]
+  },
+  {
+    category: 'Kaffeespezialitäten',
+    items: [
+      { id: 'flatt',  name: 'Flat White',         price: 3.60, desc: 'Ristretto mit seidiger Milch' },
+      { id: 'macc',   name: 'Espresso Macchiato', price: 2.60, desc: 'Espresso mit einem Hauch Milch' },
+      { id: 'oat',    name: 'Oat Latte',          price: 4.20, desc: 'Mit Hafermilch', tag: 'Vegan' },
+    ]
+  },
+  {
+    category: 'Kaffee zum Mitnehmen',
+    items: [
+      { id: 'b250',   name: '250g LeNoKo (wählen)', price: 8.90, desc: 'Ganze Bohne oder gemahlen – Sorte nach Wahl' },
+      { id: 'b500',   name: '500g LeNoKo (wählen)', price: 16.50, desc: 'Ganze Bohne oder gemahlen – Sorte nach Wahl' },
+    ]
+  },
+  {
+    category: 'Kleinigkeiten',
+    items: [
+      { id: 'wass',   name: 'Mineralwasser',      price: 1.80, desc: '0,33l' },
+      { id: 'saft',   name: 'Saft / Limo',        price: 2.50, desc: 'Frage nach dem aktuellen Angebot' },
+    ]
+  },
+];
+// ═══════════════════════════════════════════════════════
+
+const params     = new URLSearchParams(location.search);
+const tableNum   = parseInt(params.get('tisch') || params.get('table') || '0');
+const cart       = {};
+
+document.getElementById('tisch-badge').textContent = `📍 Tisch ${tableNum || '?'}`;
+
+// Check config
+let sbClient;
+if (SUPABASE_URL.includes('DEINE') || SUPABASE_KEY.includes('DEIN_')) {
+  const banner = document.getElementById('config-banner');
+  banner.style.display = 'block';
+  banner.innerHTML = `⚠️ Konfiguration fehlt: Bitte in <code>order-page.html</code> die Werte <code>SUPABASE_URL</code> und <code>SUPABASE_KEY</code> eintragen.`;
+} else {
+  sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
+
+// Render menu
+function renderMenu() {
+  const container = document.getElementById('menu-container');
+  container.innerHTML = MENU.map(cat => `
+    <div class="category">
+      <div class="category-title">${cat.category}</div>
+      ${cat.items.map(item => `
+        <div class="menu-item">
+          <div class="item-info">
+            <div class="item-name-row">
+              ${escHtml(item.name)}
+              ${item.tag ? `<span class="item-tag">${item.tag}</span>` : ''}
+            </div>
+            ${item.desc ? `<div class="item-desc">${escHtml(item.desc)}</div>` : ''}
+            <div class="item-price">${item.price.toFixed(2).replace('.',',')} €</div>
+          </div>
+          <div class="counter">
+            <button class="cnt-btn" onclick="changeQty('${item.id}', -1)">−</button>
+            <div class="cnt-val" id="qty-${item.id}">0</div>
+            <button class="cnt-btn" onclick="changeQty('${item.id}', +1)">+</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function changeQty(id, delta) {
+  cart[id] = Math.max(0, (cart[id] || 0) + delta);
+  if (cart[id] === 0) delete cart[id];
+  const el = document.getElementById(`qty-${id}`);
+  if (el) {
+    el.textContent = cart[id] || 0;
+    el.className = 'cnt-val' + (cart[id] ? ' nonzero' : '');
+  }
+  updateFooter();
+}
+
+function getAllItems() {
+  return MENU.flatMap(c => c.items);
+}
+
+function updateFooter() {
+  const all   = getAllItems();
+  let total   = 0, count = 0;
+  for (const [id, qty] of Object.entries(cart)) {
+    const item = all.find(i => i.id === id);
+    if (item) { total += item.price * qty; count += qty; }
+  }
+  document.getElementById('footer-count').textContent = `${count} Artikel`;
+  document.getElementById('footer-total').textContent = total.toFixed(2).replace('.', ',') + ' €';
+  document.getElementById('order-btn').disabled = count === 0;
+}
+
+async function submitOrder() {
+  const btn = document.getElementById('order-btn');
+  btn.disabled = true;
+  btn.textContent = 'Wird gesendet…';
+
+  const all = getAllItems();
+  const items = Object.entries(cart).map(([id, qty]) => {
+    const item = all.find(i => i.id === id);
+    return { id, name: item.name, price: item.price, qty };
+  });
+
+  const payload = {
+    table_number: tableNum,
+    items,
+    note: document.getElementById('note').value.trim(),
+    status: 'neu',
+    created_at: new Date().toISOString(),
+  };
+
+  if (!sbClient) {
+    // Demo mode
+    showSuccess(items);
+    return;
+  }
+
+  const { error } = await sbClient.from('orders').insert(payload);
+
+  if (error) {
+    btn.disabled = false;
+    btn.textContent = 'Jetzt bestellen';
+    alert('Fehler beim Senden. Bitte rufe kurz das Personal.');
+    console.error(error);
+    return;
+  }
+
+  showSuccess(items);
+}
+
+function showSuccess(items) {
+  document.getElementById('main-content').style.display = 'none';
+  document.getElementById('footer').style.display = 'none';
+  const s = document.getElementById('success-screen');
+  s.style.display = 'flex';
+  const total = items.reduce((acc, i) => acc + i.price * i.qty, 0);
+  document.getElementById('success-msg').textContent =
+    `${items.length} Position${items.length > 1 ? 'en' : ''} für Tisch ${tableNum} – gesamt ${total.toFixed(2).replace('.',',')} €. Wir machen uns gleich an die Arbeit!`;
+}
+
+function resetOrder() {
+  location.reload();
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+renderMenu();
+updateFooter();
+</script>
+</body>
+</html>

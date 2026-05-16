@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bestellungen">
+<meta name="theme-color" content="#1a0a00">
+<title>LeNoKo – Bestellungen</title>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --dunkel:   #1a0a00;
+    --braun:    #562600;
+    --mittel:   #937551;
+    --gold:     #cfab71;
+    --cream:    #fff7e8;
+    --surface:  #2a1500;
+    --surface2: #3a1f08;
+    --border:   rgba(207,171,113,0.18);
+    --red:      #e05a3a;
+    --green:    #5aad72;
+    --blue:     #5a8fe0;
+    --radius:   14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--dunkel);
+    color: var(--cream);
+    min-height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  /* ── SETUP SCREEN ── */
+  #setup-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100dvh; padding: 2rem; gap: 1.5rem; text-align: center;
+  }
+  #setup-screen h1 { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--gold); }
+  #setup-screen p { color: var(--mittel); font-size: 0.9rem; max-width: 320px; line-height: 1.5; }
+  .setup-input {
+    width: 100%; max-width: 340px; padding: 0.9rem 1.1rem;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); color: var(--cream); font-size: 0.95rem;
+    font-family: 'DM Sans', sans-serif; outline: none;
+  }
+  .setup-input:focus { border-color: var(--gold); }
+  .setup-input::placeholder { color: var(--mittel); }
+  .btn-primary {
+    width: 100%; max-width: 340px; padding: 1rem;
+    background: var(--gold); color: var(--dunkel); font-weight: 600;
+    font-family: 'DM Sans', sans-serif; font-size: 1rem;
+    border: none; border-radius: var(--radius); cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn-primary:active { opacity: 0.8; }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--dunkel);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--gold); }
+  .header-meta { font-size: 0.75rem; color: var(--mittel); }
+  .conn-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--mittel); display: inline-block;
+    margin-right: 5px; transition: background .3s;
+  }
+  .conn-dot.live { background: var(--green); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1; min-width: 80px; padding: 0.7rem 0.5rem;
+    text-align: center; font-size: 0.8rem; color: var(--mittel);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    white-space: nowrap; transition: all .15s;
+    position: relative;
+  }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-badge {
+    position: absolute; top: 6px; right: 6px;
+    background: var(--red); color: #fff; font-size: 0.65rem;
+    padding: 1px 5px; border-radius: 99px; font-weight: 600;
+    min-width: 16px; line-height: 16px;
+  }
+
+  /* ── ORDER LIST ── */
+  .order-list { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .order-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: slideIn .25s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .order-card.done { opacity: 0.45; }
+  .order-card.done .card-header { background: var(--surface); }
+
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .card-tisch { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--gold); }
+  .card-time { font-size: 0.72rem; color: var(--mittel); }
+  .status-badge {
+    font-size: 0.7rem; font-weight: 600; padding: 3px 9px;
+    border-radius: 99px; letter-spacing: 0.03em;
+  }
+  .status-neu    { background: rgba(224,90,58,.2);  color: var(--red);   }
+  .status-bereit { background: rgba(90,173,114,.2); color: var(--green); }
+  .status-bezahlt{ background: rgba(90,143,224,.2); color: var(--blue);  }
+  .status-erledigt{background: rgba(147,117,81,.2); color: var(--mittel);}
+
+  .card-items { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+  .item-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 0.25rem 0; font-size: 0.9rem;
+  }
+  .item-name { flex: 1; }
+  .item-qty  { color: var(--gold); font-weight: 600; margin-right: 0.5rem; font-size: 0.85rem; }
+  .item-price{ color: var(--mittel); font-size: 0.82rem; }
+  .card-note {
+    padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--mittel);
+    font-style: italic; border-bottom: 1px solid var(--border);
+  }
+  .card-total {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
+  .total-label { color: var(--mittel); }
+  .total-amount { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1.1rem; }
+
+  .card-actions {
+    display: flex; gap: 0.5rem; padding: 0.75rem 1rem;
+    background: var(--dunkel); flex-wrap: wrap;
+  }
+  .btn-action {
+    flex: 1; min-width: 80px; padding: 0.6rem 0.5rem;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    background: transparent; color: var(--cream); font-size: 0.78rem;
+    font-family: 'DM Sans', sans-serif; cursor: pointer;
+    transition: all .15s; text-align: center; font-weight: 500;
+  }
+  .btn-action:active { transform: scale(0.96); }
+  .btn-bereit  { border-color: var(--green); color: var(--green); }
+  .btn-sumup   { border-color: var(--gold);  color: var(--gold);  }
+  .btn-bezahlt { border-color: var(--blue);  color: var(--blue);  }
+  .btn-erledigt{ border-color: var(--mittel);color: var(--mittel);}
+  .btn-action.active { background: currentColor; color: var(--dunkel) !important; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 4rem 2rem; gap: 1rem; text-align: center;
+  }
+  .empty-icon { font-size: 3rem; opacity: 0.3; }
+  .empty-text { color: var(--mittel); font-size: 0.9rem; }
+
+  /* ── SETTINGS PANEL ── */
+  .settings-panel { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+  .settings-panel h2 { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1.2rem; }
+  .setting-row { display: flex; flex-direction: column; gap: 0.4rem; }
+  .setting-label { font-size: 0.8rem; color: var(--mittel); }
+  .setting-val { font-size: 0.9rem; color: var(--cream); word-break: break-all; }
+  .btn-sm {
+    padding: 0.6rem 1rem; border: 1.5px solid var(--border);
+    border-radius: 10px; background: transparent; color: var(--mittel);
+    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer;
+  }
+  .btn-danger { border-color: var(--red); color: var(--red); }
+  .divider { height: 1px; background: var(--border); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); color: var(--cream);
+    padding: 0.7rem 1.4rem; border-radius: 99px;
+    font-size: 0.85rem; border: 1px solid var(--border);
+    transition: transform .3s; z-index: 999; white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── SOUND TOGGLE ── */
+  .sound-btn {
+    background: none; border: none; color: var(--mittel);
+    font-size: 1.1rem; cursor: pointer; padding: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup-screen">
+  <div>
+    <div style="font-size:2.5rem;margin-bottom:0.5rem">☕</div>
+    <h1>LeNoKo Bestellungen</h1>
+  </div>
+  <p>Bitte gib deine Supabase-Zugangsdaten ein. Diese werden nur auf diesem Gerät gespeichert.</p>
+  <input class="setup-input" id="sb-url"  placeholder="Supabase URL (https://xxx.supabase.co)" autocomplete="off">
+  <input class="setup-input" id="sb-key"  placeholder="Supabase anon key" autocomplete="off" type="password">
+  <button class="btn-primary" onclick="saveSetup()">Verbinden & starten</button>
+  <p id="setup-error" style="color:var(--red);font-size:0.8rem;display:none"></p>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none">
+  <header>
+    <div>
+      <div class="header-title">☕ Bestellungen</div>
+      <div class="header-meta"><span class="conn-dot" id="conn-dot"></span><span id="conn-label">Verbinde…</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="sound-btn" id="sound-btn" title="Ton ein/aus">🔔</button>
+      <div style="text-align:right">
+        <div style="font-size:0.72rem;color:var(--mittel)" id="order-count">0 offen</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs" id="tab-bar">
+    <div class="tab active" data-filter="offen" onclick="setFilter('offen',this)">
+      Offen <span class="tab-badge" id="badge-offen" style="display:none"></span>
+    </div>
+    <div class="tab" data-filter="bereit" onclick="setFilter('bereit',this)">
+      Bereit <span class="tab-badge" id="badge-bereit" style="display:none"></span>
+    </div>
+    <div class="tab" data-filter="alle" onclick="setFilter('alle',this)">Alle</div>
+    <div class="tab" data-filter="settings" onclick="setFilter('settings',this)">⚙</div>
+  </div>
+
+  <div id="order-list" class="order-list"></div>
+  <div id="settings-view" style="display:none"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────
+const STORAGE_KEY_URL = 'lenoko_sb_url';
+const STORAGE_KEY_KEY = 'lenoko_sb_key';
+const SUMUP_MERCHANT   = ''; // optional: deine SumUp-Merchant-E-Mail
+
+let supabase, channel;
+let orders = [];
+let currentFilter = 'offen';
+let soundEnabled = localStorage.getItem('lenoko_sound') !== 'false';
+
+// ── AUDIO ────────────────────────────────────────────────────────────
+function playChime() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(); osc.stop(ctx.currentTime + 0.5);
+  } catch(e) {}
+}
+
+document.getElementById('sound-btn').onclick = () => {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('lenoko_sound', soundEnabled);
+  document.getElementById('sound-btn').textContent = soundEnabled ? '🔔' : '🔕';
+  toast(soundEnabled ? 'Ton aktiviert' : 'Ton stumm');
+};
+if (!soundEnabled) document.getElementById('sound-btn').textContent = '🔕';
+
+// ── SETUP ────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const url = localStorage.getItem(STORAGE_KEY_URL);
+  const key = localStorage.getItem(STORAGE_KEY_KEY);
+  if (url && key) initApp(url, key);
+});
+
+function saveSetup() {
+  const url = document.getElementById('sb-url').value.trim();
+  const key = document.getElementById('sb-key').value.trim();
+  const err = document.getElementById('setup-error');
+  if (!url || !key) { err.textContent='Bitte beide Felder ausfüllen.'; err.style.display='block'; return; }
+  localStorage.setItem(STORAGE_KEY_URL, url);
+  localStorage.setItem(STORAGE_KEY_KEY, key);
+  err.style.display = 'none';
+  initApp(url, key);
+}
+
+async function initApp(url, key) {
+  supabase = window.supabase.createClient(url, key);
+
+  // Test connection
+  const { error } = await supabase.from('orders').select('id').limit(1);
+  if (error && error.code !== 'PGRST116') {
+    showSetupError('Verbindung fehlgeschlagen: ' + error.message);
+    return;
+  }
+
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+
+  await loadOrders();
+  subscribeRealtime();
+  renderSettings();
+}
+
+function showSetupError(msg) {
+  const err = document.getElementById('setup-error');
+  err.textContent = msg;
+  err.style.display = 'block';
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('main-app').style.display = 'none';
+}
+
+// ── DATA ─────────────────────────────────────────────────────────────
+async function loadOrders() {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  orders = data || [];
+  renderOrders();
+}
+
+function subscribeRealtime() {
+  channel = supabase.channel('orders-channel')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+      handleRealtimeEvent(payload);
+    })
+    .subscribe(status => {
+      const dot = document.getElementById('conn-dot');
+      const lbl = document.getElementById('conn-label');
+      if (status === 'SUBSCRIBED') {
+        dot.classList.add('live');
+        lbl.textContent = 'Live';
+      } else {
+        dot.classList.remove('live');
+        lbl.textContent = 'Verbinde…';
+      }
+    });
+}
+
+function handleRealtimeEvent(payload) {
+  if (payload.eventType === 'INSERT') {
+    orders.unshift(payload.new);
+    playChime();
+    toast(`Neue Bestellung – Tisch ${payload.new.table_number}`);
+  } else if (payload.eventType === 'UPDATE') {
+    const idx = orders.findIndex(o => o.id === payload.new.id);
+    if (idx >= 0) orders[idx] = payload.new;
+    else orders.unshift(payload.new);
+  } else if (payload.eventType === 'DELETE') {
+    orders = orders.filter(o => o.id !== payload.old.id);
+  }
+  renderOrders();
+}
+
+async function updateOrderStatus(id, status) {
+  const { error } = await supabase.from('orders').update({ status }).eq('id', id);
+  if (error) { toast('Fehler beim Speichern'); console.error(error); }
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderOrders();
+}
+
+function renderOrders() {
+  const list  = document.getElementById('order-list');
+  const sett  = document.getElementById('settings-view');
+  list.style.display  = currentFilter === 'settings' ? 'none' : 'flex';
+  sett.style.display  = currentFilter === 'settings' ? 'block' : 'none';
+
+  // Badges
+  const offen  = orders.filter(o => o.status === 'neu').length;
+  const bereit = orders.filter(o => o.status === 'bereit').length;
+  const bo = document.getElementById('badge-offen');
+  const bb = document.getElementById('badge-bereit');
+  bo.textContent = offen;  bo.style.display = offen  ? 'block' : 'none';
+  bb.textContent = bereit; bb.style.display = bereit ? 'block' : 'none';
+  document.getElementById('order-count').textContent = `${offen} offen`;
+
+  if (currentFilter === 'settings') return;
+
+  let filtered = orders;
+  if (currentFilter === 'offen')  filtered = orders.filter(o => ['neu'].includes(o.status));
+  if (currentFilter === 'bereit') filtered = orders.filter(o => ['bereit'].includes(o.status));
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">✓</div>
+      <div class="empty-text">Keine Bestellungen hier</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(order => orderCard(order)).join('');
+}
+
+function orderCard(o) {
+  const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+  const total = items.reduce((s, i) => s + (i.price * i.qty), 0);
+  const time  = new Date(o.created_at).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'});
+
+  const statusLabels = { neu:'Neu', bereit:'Bereit', bezahlt:'Bezahlt', erledigt:'Erledigt' };
+  const statusClass  = `status-${o.status}`;
+
+  const note = o.note ? `<div class="card-note">💬 ${escHtml(o.note)}</div>` : '';
+
+  // SumUp deep link – öffnet SumUp App mit Betrag
+  const sumupUrl = `sumup://pay?amount=${total.toFixed(2)}&currency=EUR&title=Tisch+${o.table_number}`;
+  const sumupFallback = `https://pay.sumup.com/b2c/DEINCODE`; // optional
+
+  const isDone = o.status === 'erledigt';
+
+  return `<div class="order-card ${isDone ? 'done' : ''}" id="card-${o.id}">
+    <div class="card-header">
+      <div>
+        <div class="card-tisch">Tisch ${o.table_number}</div>
+        <div class="card-time">${time} Uhr</div>
+      </div>
+      <span class="status-badge ${statusClass}">${statusLabels[o.status] || o.status}</span>
+    </div>
+    <div class="card-items">
+      ${items.map(i => `
+        <div class="item-row">
+          <span class="item-qty">${i.qty}×</span>
+          <span class="item-name">${escHtml(i.name)}</span>
+          <span class="item-price">${(i.price * i.qty).toFixed(2)} €</span>
+        </div>`).join('')}
+    </div>
+    ${note}
+    <div class="card-total">
+      <span class="total-label">Gesamt</span>
+      <span class="total-amount">${total.toFixed(2)} €</span>
+    </div>
+    <div class="card-actions">
+      ${o.status === 'neu' ? `<button class="btn-action btn-bereit" onclick="setStatus('${o.id}','bereit')">✓ Bereit</button>` : ''}
+      ${o.status !== 'erledigt' ? `<button class="btn-action btn-sumup" onclick="openSumup('${o.id}','${sumupUrl}',${total})">💳 SumUp</button>` : ''}
+      ${o.status !== 'bezahlt' && o.status !== 'erledigt' ? `<button class="btn-action btn-bezahlt" onclick="setStatus('${o.id}','bezahlt')">€ Bar/fertig</button>` : ''}
+      ${o.status === 'bezahlt' || o.status === 'bereit' ? `<button class="btn-action btn-erledigt" onclick="setStatus('${o.id}','erledigt')">🗑 Abhaken</button>` : ''}
+    </div>
+  </div>`;
+}
+
+window.setStatus = async (id, status) => {
+  // optimistic update
+  const idx = orders.findIndex(o => o.id === id);
+  if (idx >= 0) orders[idx].status = status;
+  renderOrders();
+  await updateOrderStatus(id, status);
+  toast(status === 'bereit' ? 'Als bereit markiert' : status === 'bezahlt' ? 'Bezahlt ✓' : 'Erledigt ✓');
+};
+
+window.openSumup = (id, url, total) => {
+  // Try to open SumUp app; show modal with amount
+  toast(`SumUp: ${total.toFixed(2)} €`);
+  window.location.href = url;
+};
+
+// ── SETTINGS ─────────────────────────────────────────────────────────
+function renderSettings() {
+  const url = localStorage.getItem(STORAGE_KEY_URL) || '';
+  const domain = url.replace('https://','').split('.')[0];
+  document.getElementById('settings-view').innerHTML = `
+    <div class="settings-panel">
+      <h2>Einstellungen</h2>
+      <div class="setting-row">
+        <div class="setting-label">Supabase-Projekt</div>
+        <div class="setting-val">${domain}…</div>
+      </div>
+      <div class="divider"></div>
+      <div class="setting-row">
+        <div class="setting-label">QR-Code URLs für Tische</div>
+        <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.4rem">
+          ${[1,2,3,4,5,6].map(t => `<div class="setting-val" style="font-size:0.78rem">
+            Tisch ${t}: <span style="color:var(--gold)">${location.origin}/order-page.html?tisch=${t}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div class="divider"></div>
+      <button class="btn-sm btn-danger" onclick="resetApp()">Zugangsdaten löschen & neu verbinden</button>
+      <div style="font-size:0.75rem;color:var(--mittel);line-height:1.5">
+        Bestellungen werden in Echtzeit über Supabase synchronisiert. 
+        Alle drei Handys müssen dieselben Supabase-Zugangsdaten verwenden.
+      </div>
+    </div>`;
+}
+
+window.resetApp = () => {
+  if (!confirm('Zugangsdaten wirklich löschen?')) return;
+  localStorage.removeItem(STORAGE_KEY_URL);
+  localStorage.removeItem(STORAGE_KEY_KEY);
+  location.reload();
+};
+
+// ── TOAST ─────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
