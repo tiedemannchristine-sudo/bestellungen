@@ -188,42 +188,73 @@
 // ═══════════════════════════════════════════════════════
 //  KONFIGURATION – hier anpassen
 // ═══════════════════════════════════════════════════════
-const SUPABASE_URL = 'https://hlcicceznuizhbzpwmhm.supabase.co';   // ← ersetzen
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsY2ljY2V6bnVpemhienB3bWhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4ODc5MzksImV4cCI6MjA5NDQ2MzkzOX0.pY2iuaGFOYogJ3to5xtnlIg0F6yLx7uS-_6X-ca2slA';         // ← ersetzen
+const SUPABASE_URL = 'DEINE_SUPABASE_URL';   // ← ersetzen
+const SUPABASE_KEY = 'DEIN_ANON_KEY';         // ← ersetzen
 
 // Speisekarte – hier Produkte und Preise pflegen
 const MENU = [
   {
     category: 'Kaffee',
     items: [
-      { id: 'esp',    name: 'Espresso',          price: 2.20, desc: 'Kräftig & aromatisch, Linzer Röstung' },
-      { id: 'dbl',    name: 'Doppio',             price: 3.20, desc: 'Doppelter Espresso' },
-      { id: 'cap',    name: 'Cappuccino',         price: 3.50, desc: 'Espresso mit aufgeschäumter Milch' },
-      { id: 'latte',  name: 'Latte Macchiato',    price: 3.80, desc: 'Milchkaffee in Schichten' },
-      { id: 'filt',   name: 'Filterkaffee',       price: 2.80, desc: 'Handgefiltert, täglich frisch' },
-      { id: 'cold',   name: 'Cold Brew',          price: 3.80, desc: 'Kalt aufgebrüht, 12 Stunden', tag: 'Sommer' },
+      { id: 'esp',      name: 'Espresso',                     price: 2.00 },
+      { id: 'esp_mac',  name: 'Espresso Macchiato',           price: 2.40 },
+      { id: 'dop',      name: 'Espresso Doppio',              price: 3.20 },
+      { id: 'ame',      name: 'Americano',                    price: 3.20 },
+      { id: 'cap',      name: 'Cappuccino',                   price: 3.50 },
+      { id: 'flat',     name: 'Flat White',                   price: 3.80 },
+      { id: 'latte',    name: 'Latte Macchiato',              price: 4.00 },
+      { id: 'milch',    name: 'Milchkaffee',                  price: 4.00 },
+      { id: 'filt',     name: 'Filterkaffee',                 price: 2.90 },
+      { id: 'filtlup',  name: 'Filterkaffee Lupine',          price: 2.90, desc: 'koffeinfrei' },
+      { id: 'hafer',    name: 'Hafermilch',                   price: 0.40, desc: 'Aufpreis statt Kuhmilch' },
     ]
   },
   {
-    category: 'Kaffeespezialitäten',
+    category: 'Kalt & Eis',
     items: [
-      { id: 'flatt',  name: 'Flat White',         price: 3.60, desc: 'Ristretto mit seidiger Milch' },
-      { id: 'macc',   name: 'Espresso Macchiato', price: 2.60, desc: 'Espresso mit einem Hauch Milch' },
-      { id: 'oat',    name: 'Oat Latte',          price: 4.20, desc: 'Mit Hafermilch', tag: 'Vegan' },
+      { id: 'cold',     name: 'Cold Brew',                    price: 2.90 },
+      { id: 'coldor',   name: 'Cold Brew Orange / Espresso Sunrise', price: 3.20 },
+      { id: 'coldton',  name: 'Cold Brew Tonic / Espresso Tonic',    price: 3.20 },
+      { id: 'casc_eis', name: 'Cascara Eistee',               price: 3.20 },
+      { id: 'icedlat',  name: 'Iced Latte',                   price: 4.00 },
+      { id: 'eiskaf',   name: 'Eiskaffee',                    price: 5.50 },
+      { id: 'eiskafos', name: 'Eiskaffee ohne Sahne',         price: 5.00 },
+      { id: 'affog',    name: 'Affogato',                     price: 3.20 },
     ]
   },
   {
-    category: 'Kaffee zum Mitnehmen',
+    category: 'Tee & Weitere',
     items: [
-      { id: 'b250',   name: '250g LeNoKo (wählen)', price: 8.90, desc: 'Ganze Bohne oder gemahlen – Sorte nach Wahl' },
-      { id: 'b500',   name: '500g LeNoKo (wählen)', price: 16.50, desc: 'Ganze Bohne oder gemahlen – Sorte nach Wahl' },
+      { id: 'casc_tee', name: 'Cascara Tee',                  price: 2.80 },
+      { id: 'hotchoc',  name: 'Hot Chocolate',                price: 4.00 },
+      { id: 'punsch',   name: 'Punsch',                       price: 3.00, tag: 'Saisonal' },
+      { id: 'kind',     name: 'Kinder Schäumchen',            price: 1.00 },
+      { id: 'apfschor', name: 'Apfelschorle',                 price: 2.20 },
+      { id: 'wasser',   name: 'Wasser',                       price: 2.00 },
     ]
   },
   {
-    category: 'Kleinigkeiten',
+    category: 'Engelspring Tees',
     items: [
-      { id: 'wass',   name: 'Mineralwasser',      price: 1.80, desc: '0,33l' },
-      { id: 'saft',   name: 'Saft / Limo',        price: 2.50, desc: 'Frage nach dem aktuellen Angebot' },
+      { id: 'chai',     name: 'Chai Latte Engelspring',       price: 4.00 },
+      { id: 'matcha',   name: 'Matcha Latte Engelspring',     price: 4.00 },
+      { id: 'goldmilch',name: 'Goldene Milch Engelspring',    price: 4.00 },
+      { id: 'eistee',   name: 'Eistee Engelspring',           price: 3.50 },
+      { id: 'schwarztee',name: 'Schwarz-/Grüntee Engelspring',price: 3.50 },
+      { id: 'krauttee', name: 'Kräuter-/Früchtetee Engelspring', price: 2.80 },
+      { id: 'punsch_e', name: 'Punsch Engelspring',           price: 3.00, tag: 'Saisonal' },
+    ]
+  },
+  {
+    category: 'Süßes',
+    items: [
+      { id: 'zimt',     name: 'Zimtschnecke',                 price: 2.90 },
+      { id: 'zimtcap',  name: 'Zimtschnecke + Cappuccino',   price: 6.00, tag: 'Angebot', desc: 'Statt 6,40 €' },
+      { id: 'apfel1',   name: 'Apfel-Zimt-Bällchen (1 Stck)', price: 0.80 },
+      { id: 'apfel3',   name: 'Apfel-Zimt-Bällchen (3 Stck)', price: 1.80 },
+      { id: 'apfel6',   name: 'Apfel-Zimt-Bällchen (6 Stck)', price: 3.20 },
+      { id: 'schokob',  name: 'Schokobohnen Schälchen',       price: 1.00 },
+      { id: 'schokoerd',name: 'Schokoerdbeeren Schälchen',    price: 1.00 },
     ]
   },
 ];
